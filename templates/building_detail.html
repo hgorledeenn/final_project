@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ building.building_address }} - Who Owns This Block{% endblock %}
+{% block content %}
+
+<p><a href="{{ url_for('buildings_list') }}">&larr; Back to all buildings</a></p>
+
+<h1>{{ building.building_address }}</h1>
+<p class="subtitle">Registered owner: <strong>{{ building.owner_display }}</strong></p>
+
+<section class="detail-grid">
+  <div><span class="k">Borough</span><span class="v">{{ building.boro_label }}</span></div>
+  <div><span class="k">Block / Lot</span><span class="v">{{ building.block }} / {{ building.lot }}</span></div>
+  <div><span class="k">BIN</span><span class="v">{{ building.bin | int }}</span></div>
+  <div><span class="k">Property type</span><span class="v">{{ building.property_type_label }} ({{ building.property_type }})</span></div>
+  <div><span class="k">ZIP</span><span class="v">{{ building.building_zip or "—" }}</span></div>
+</section>
+
+<h2>Deed &amp; mortgage records tied to this parcel</h2>
+<p class="subtitle">
+  These come from ACRIS Real Property records for this block/lot — grantors,
+  grantees, and other named parties on documents filed against the parcel.
+  {{ documents | length }} document(s) found. The dataset doesn't include a
+  document-type field, so parties are labeled generically (ACRIS convention:
+  Party 1 is typically the seller/borrower, Party 2 the buyer/lender).
+</p>
+
+{% for doc in documents %}
+<div class="doc-card">
+  <div class="doc-header">
+    <span class="doc-id">Document {{ doc.document_id }}</span>
+    <span class="doc-date">{{ doc.recorded_date or "date unknown" }}</span>
+  </div>
+  <table class="party-table">
+    <thead>
+      <tr><th>Role</th><th>Name</th><th>Address</th><th>City/State/ZIP</th></tr>
+    </thead>
+    <tbody>
+      {% for p in doc.parties %}
+      <tr>
+        <td>{{ p.party_type_label }}</td>
+        <td>{{ p.name }}</td>
+        <td>{{ p.address_1 or "" }} {{ p.address_2 or "" }}</td>
+        <td>{{ p.city or "" }}{% if p.city and p.state %}, {% endif %}{{ p.state or "" }} {{ p.zip or "" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty">No deed or mortgage records found for this parcel.</p>
+{% endfor %}
+
+{% endblock %}

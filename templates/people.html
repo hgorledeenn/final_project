@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}People &amp; Entities - Who Owns This Block{% endblock %}
+{% block content %}
+
+<h1>People &amp; Entities</h1>
+<p class="subtitle">
+  Every name that appears as a party on a deed, mortgage, or other document
+  tied to one of these buildings' parcels &mdash; individuals, LLCs, banks,
+  and government agencies alike. Grouped by exact name as recorded in ACRIS,
+  so minor spelling variants may not be merged together.
+</p>
+
+<form class="filters" method="get">
+  <input type="text" name="q" placeholder="Search name…" value="{{ search }}">
+
+  <select name="owner">
+    <option value="">All institutions</option>
+    {% for owner in owners %}
+      <option value="{{ owner }}" {% if owner == selected_owner %}selected{% endif %}>{{ owner }}</option>
+    {% endfor %}
+  </select>
+
+  <label class="checkbox-label">
+    <input type="checkbox" name="multi" value="1" {% if multi_only %}checked{% endif %}>
+    Linked to multiple institutions
+  </label>
+
+  <button type="submit">Apply</button>
+  <a class="reset" href="{{ url_for('people_list') }}">Reset</a>
+</form>
+
+<p class="result-count">
+  Showing {{ shown_count }} of {{ result_count }} matching people/entities
+  {% if result_count > shown_count %}(top {{ shown_count }} by property count &mdash; refine your search to see more){% endif %}
+  &mdash; {{ total_count }} total in the dataset.
+</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Institution(s)</th>
+      <th>Properties</th>
+      <th>Documents</th>
+      <th>Role(s)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in people %}
+    <tr>
+      <td><a href="{{ url_for('person_detail', person_id=p.person_id) }}">{{ p.name }}</a></td>
+      <td>{{ p.owners_display }}</td>
+      <td>{{ p.properties }}</td>
+      <td>{{ p.documents }}</td>
+      <td>{{ p.roles_display }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="empty">No names match these filters.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

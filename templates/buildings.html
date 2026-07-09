@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Buildings - Who Owns This Block{% endblock %}
+{% block content %}
+
+<h1>Buildings</h1>
+<p class="subtitle">Filter by institution, borough, or property type, or search by address.</p>
+
+<form class="filters" method="get">
+  <input type="text" name="q" placeholder="Search address…" value="{{ search }}">
+
+  <select name="owner">
+    <option value="">All institutions</option>
+    {% for owner in owners %}
+      <option value="{{ owner }}" {% if owner == selected_owner %}selected{% endif %}>{{ owner }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="boro">
+    <option value="">All boroughs</option>
+    {% for boro in boros %}
+      <option value="{{ boro }}" {% if boro == selected_boro %}selected{% endif %}>{{ boro }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="property_type">
+    <option value="">All property types</option>
+    {% for pt in property_types %}
+      <option value="{{ pt }}" {% if pt == selected_property_type %}selected{% endif %}>{{ pt }}</option>
+    {% endfor %}
+  </select>
+
+  <button type="submit">Apply</button>
+  <a class="reset" href="{{ url_for('buildings_list') }}">Reset</a>
+</form>
+
+<p class="result-count">Showing {{ result_count }} of {{ total_count }} buildings</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Address</th>
+      <th>Institution</th>
+      <th>Borough</th>
+      <th>Property type</th>
+      <th>Block/Lot</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for b in buildings %}
+    <tr>
+      <td><a href="{{ url_for('building_detail', building_id=b.buildingid) }}">{{ b.building_address }}</a></td>
+      <td>{{ b.owner_display }}</td>
+      <td>{{ b.boro_label }}</td>
+      <td>{{ b.property_type_label }}</td>
+      <td>{{ b.block }}/{{ b.lot }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="empty">No buildings match these filters.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

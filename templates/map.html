@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Map - Who Owns This Block{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+{% endblock %}
+{% block content %}
+
+<h1>Map</h1>
+<p class="subtitle">
+  Every building, geocoded from its registered address and colored by institution.
+  Click a dot for details, or filter below to narrow what's shown.
+  {% if mapped_count < total_count %}({{ total_count - mapped_count }} of {{ total_count }} buildings couldn't be located and aren't shown.){% endif %}
+</p>
+
+<div class="legend">
+  {% for item in legend %}
+  <span class="legend-item">
+    <span class="dot" style="background: {{ item.marker_color }};"></span>
+    {{ item.owner_group }}
+  </span>
+  {% endfor %}
+</div>
+
+<form class="filters" id="mapFilters">
+  <select name="owner" id="ownerFilter">
+    <option value="">All institutions</option>
+    {% for owner in owners %}
+      <option value="{{ owner }}">{{ owner }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="boro" id="boroFilter">
+    <option value="">All boroughs</option>
+    {% for boro in boros %}
+      <option value="{{ boro }}">{{ boro }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="property_type" id="propertyTypeFilter">
+    <option value="">All property types</option>
+    {% for pt in property_types %}
+      <option value="{{ pt }}">{{ pt }}</option>
+    {% endfor %}
+  </select>
+
+  <a class="reset" href="#" id="resetFilters">Reset</a>
+</form>
+
+<p class="result-count" id="mapResultCount"></p>
+
+<div id="map"></div>
+
+<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+<script>
+  const points = {{ points | tojson }};
+
+  const map = L.map('map').setView([40.75, -73.97], 12);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19,
+  }).addTo(map);
+
+  let markerLayer = L.layerGroup().addTo(map);
+  let hasFitBoundsOnce = false;
+
+  function pointToMarker(p) {
+    const marker = L.circleMarker([p.lat, p.lon], {
+      radius: 7,
+      color: '#ffffff',
+      weight: 1,
+      fillColor: p.color,
+      fillOpacity: 0.55,
+    });
+
+    marker.bindPopup(
+      `<strong>${p.address}</strong><br>` +
+      `${p.owner}<br>` +
+      `${p.boro} &middot; ${p.property_type}<br>` +
+      `<a href="/buildings/${p.id}">View full details &rarr;</a>`
+    );
+
+    return marker;
+  }
+
+  function currentFilters() {
+    return {
+      owner: document.getElementById('ownerFilter').value,
+      boro: document.getElementById('boroFilter').value,
+      property_type: document.getElementById('propertyTypeFilter').value,
+    };
+  }
+
+  function render() {
+    const { owner, boro, property_type } = currentFilters();
+
+    const filtered = points.filter((p) =>
+      (!owner || p.owner_group === owner) &&
+      (!boro || p.boro === boro) &&
+      (!property_type || p.property_type === property_type)
+    );
+
+    markerLayer.clearLayers();
+    const markers = filtered.map(pointToMarker);
+    markers.forEach((m) => markerLayer.addLayer(m));
+
+    document.getElementById('mapResultCount').textContent =
+      `Showing ${filtered.length} of ${points.length} mapped buildings`;
+
+    if (markers.length) {
+      const group = L.featureGroup(markers);
+      map.fitBounds(group.getBounds().pad(0.1));
+      hasFitBoundsOnce = true;
+    } else if (!hasFitBoundsOnce) {
+      map.setView([40.75, -73.97], 12);
+    }
+  }
+
+  ['ownerFilter', 'boroFilter', 'propertyTypeFilter'].forEach((id) => {
+    document.getElementById(id).addEventListener('change', render);
+  });
+
+  document.getElementById('resetFilters').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('mapFilters').reset();
+    render();
+  });
+
+  render();
+</script>
+{% endblock %}

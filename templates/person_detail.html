@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ person.name }} - Who Owns This Block{% endblock %}
+{% block content %}
+
+<p><a href="{{ url_for('people_list') }}">&larr; Back to all people &amp; entities</a></p>
+
+<h1>{{ person.name }}</h1>
+<p class="subtitle">
+  Appears on {{ person.documents }} document(s) across {{ person.properties }} propert{{ "y" if person.properties == 1 else "ies" }},
+  linked to: <strong>{{ person.owners_display }}</strong>.
+</p>
+
+<h2>Properties</h2>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Address</th>
+      <th>Institution</th>
+      <th>Borough</th>
+      <th>Role(s)</th>
+      <th>Documents</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for prop in properties %}
+    <tr>
+      <td><a href="{{ url_for('building_detail', building_id=prop.buildingid) }}">{{ prop.building_address }}</a></td>
+      <td>{{ prop.owner_display }}</td>
+      <td>{{ prop.boro_label }}</td>
+      <td>{{ prop.roles | join(", ") }}</td>
+      <td>{{ prop.documents }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h2>Documents</h2>
+<p class="subtitle">Every document this name appears on, most recent first.</p>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Document</th>
+      <th>Property</th>
+      <th>Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for doc in documents %}
+    <tr>
+      <td>{{ doc.recorded_date or "unknown" }}</td>
+      <td>{{ doc.document_id }}</td>
+      <td><a href="{{ url_for('building_detail', building_id=doc.buildingid) }}">{{ doc.building_address }}</a></td>
+      <td>{{ doc.party_type_label }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% endblock %}
