@@ -28,7 +28,13 @@
       "Bash(curl -s \"http://127.0.0.1:5000/people/0\")",
       "Bash(git check-ignore *)",
       "Bash(git add *)",
-      "Bash(pkill -f gunicorn)"
+      "Bash(pkill -f gunicorn)",
+      "Bash(curl -s \"http://127.0.0.1:5000/people?export=csv\" -o /tmp/people_all.csv -w \"status: %{http_code}\\\\n\")",
+      "Bash(curl -s \"http://127.0.0.1:5000/people?multi=1&export=csv\" -o /tmp/people_multi.csv -w \"status: %{http_code}\\\\n\")",
+      "Bash(curl -s \"http://127.0.0.1:5000/buildings/611?export=csv\" -o /tmp/building_611.csv -w \"status: %{http_code}\\\\n\")",
+      "Bash(curl -s \"http://127.0.0.1:5000/people/0?export=csv\" -o /tmp/person_0.csv -w \"status: %{http_code}\\\\n\")",
+      "Bash(curl -s \"http://127.0.0.1:5000/map\")",
+      "Bash(curl -s -o /dev/null -w \"brooklyn building: %{http_code}\\\\n\" http://127.0.0.1:5000/buildings/302463)"
     ]
   }
 }

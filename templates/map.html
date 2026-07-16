@@ -43,6 +43,7 @@
     {% endfor %}
   </select>
 
+  <button type="button" id="exportCsv" class="export-btn">Export CSV</button>
   <a class="reset" href="#" id="resetFilters">Reset</a>
 </form>
 
@@ -64,6 +65,7 @@
 
   let markerLayer = L.layerGroup().addTo(map);
   let hasFitBoundsOnce = false;
+  let currentFiltered = points;
 
   function pointToMarker(p) {
     const marker = L.circleMarker([p.lat, p.lon], {
@@ -101,6 +103,8 @@
       (!property_type || p.property_type === property_type)
     );
 
+    currentFiltered = filtered;
+
     markerLayer.clearLayers();
     const markers = filtered.map(pointToMarker);
     markers.forEach((m) => markerLayer.addLayer(m));
@@ -125,6 +129,28 @@
     e.preventDefault();
     document.getElementById('mapFilters').reset();
     render();
+  });
+
+  function toCsv(rows) {
+    const headers = ['Building ID', 'Address', 'Registered Owner', 'Institution', 'Borough', 'Property Type', 'Latitude', 'Longitude'];
+    const keys = ['id', 'address', 'owner', 'owner_group', 'boro', 'property_type', 'lat', 'lon'];
+    const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+
+    const lines = [headers.map(escape).join(',')];
+    rows.forEach((row) => lines.push(keys.map((k) => escape(row[k])).join(',')));
+    return lines.join('\r\n');
+  }
+
+  document.getElementById('exportCsv').addEventListener('click', () => {
+    const blob = new Blob([toCsv(currentFiltered)], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'map_buildings.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   });
 
   render();

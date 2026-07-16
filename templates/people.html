@@ -26,12 +26,13 @@
   </label>
 
   <button type="submit">Apply</button>
+  <button type="submit" name="export" value="csv" class="export-btn">Export CSV</button>
   <a class="reset" href="{{ url_for('people_list') }}">Reset</a>
 </form>
 
 <p class="result-count">
   Showing {{ shown_count }} of {{ result_count }} matching people/entities
-  {% if result_count > shown_count %}(top {{ shown_count }} by property count &mdash; refine your search to see more){% endif %}
+  {% if result_count > shown_count %}(top {{ shown_count }} by property count &mdash; refine your search to see more; CSV export includes all {{ result_count }} matches){% endif %}
   &mdash; {{ total_count }} total in the dataset.
 </p>
 

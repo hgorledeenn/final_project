@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ building.building_address }} - Who Owns This Block{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+{% endblock %}
 {% block content %}
 
 <p><a href="{{ url_for('buildings_list') }}">&larr; Back to all buildings</a></p>
@@ -15,13 +18,59 @@
   <div><span class="k">ZIP</span><span class="v">{{ building.building_zip or "—" }}</span></div>
 </section>
 
-<h2>Deed &amp; mortgage records tied to this parcel</h2>
+{% if building.lat and building.lon %}
+<div id="locatorMap" class="locator-map"></div>
+<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+<script>
+  const locatorMap = L.map('locatorMap', {
+    zoomControl: false,
+    dragging: false,
+    touchZoom: false,
+    doubleClickZoom: false,
+    scrollWheelZoom: false,
+    boxZoom: false,
+    keyboard: false,
+    tap: false,
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19,
+  }).addTo(locatorMap);
+
+  // Fixed bounds covering all five boroughs, so every building shows in the
+  // same citywide context rather than a per-building zoom level.
+  locatorMap.fitBounds([
+    [40.49, -74.26],
+    [40.92, -73.70],
+  ]);
+
+  L.circleMarker([{{ building.lat }}, {{ building.lon }}], {
+    radius: 7,
+    color: '#ffffff',
+    weight: 2,
+    fillColor: '{{ building.marker_color }}',
+    fillOpacity: 0.9,
+  }).addTo(locatorMap);
+</script>
+{% else %}
+<p class="empty">Location unavailable for this building.</p>
+{% endif %}
+
+<div class="section-header">
+  <h2>Deed &amp; mortgage records tied to this parcel</h2>
+  <a class="export-link" href="{{ url_for('building_detail', building_id=building.buildingid, export='csv') }}">Export CSV</a>
+</div>
 <p class="subtitle">
   These come from ACRIS Real Property records for this block/lot — grantors,
   grantees, and other named parties on documents filed against the parcel.
   {{ documents | length }} document(s) found. The dataset doesn't include a
   document-type field, so parties are labeled generically (ACRIS convention:
   Party 1 is typically the seller/borrower, Party 2 the buyer/lender).
+  "View on ACRIS" opens the original scanned document on NYC's site &mdash;
+  the first time you visit, it may show a one-time bandwidth policy notice
+  before loading the viewer.
 </p>
 
 {% for doc in documents %}
@@ -29,6 +78,7 @@
   <div class="doc-header">
     <span class="doc-id">Document {{ doc.document_id }}</span>
     <span class="doc-date">{{ doc.recorded_date or "date unknown" }}</span>
+    <a class="doc-link" href="{{ acris_url(doc.document_id) }}" target="_blank" rel="noopener">View on ACRIS &rarr;</a>
   </div>
   <table class="party-table">
     <thead>

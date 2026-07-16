@@ -36,7 +36,10 @@
 </table>
 </div>
 
-<h2>Documents</h2>
+<div class="section-header">
+  <h2>Documents</h2>
+  <a class="export-link" href="{{ url_for('person_detail', person_id=person.person_id, export='csv') }}">Export CSV</a>
+</div>
 <p class="subtitle">Every document this name appears on, most recent first.</p>
 <div class="table-wrap">
 <table>
@@ -46,6 +49,7 @@
       <th>Document</th>
       <th>Property</th>
       <th>Role</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -55,6 +59,7 @@
       <td>{{ doc.document_id }}</td>
       <td><a href="{{ url_for('building_detail', building_id=doc.buildingid) }}">{{ doc.building_address }}</a></td>
       <td>{{ doc.party_type_label }}</td>
+      <td><a class="doc-link" href="{{ acris_url(doc.document_id) }}" target="_blank" rel="noopener">View on ACRIS &rarr;</a></td>
     </tr>
     {% endfor %}
   </tbody>

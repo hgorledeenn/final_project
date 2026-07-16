@@ -155,6 +155,37 @@ h1 { margin-bottom: 0.25rem; }
 
 .filters button:hover { background: var(--accent-dark); }
 
+.filters button.export-btn {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.filters button.export-btn:hover {
+  background: var(--surface);
+  color: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.section-header h2 { margin-bottom: 0; }
+
+.export-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.export-link:hover { text-decoration: underline; }
+
 .checkbox-label {
   display: inline-flex;
   align-items: center;
@@ -257,6 +288,8 @@ td a:hover { text-decoration: underline; }
 
 .doc-header {
   display: flex;
+  align-items: center;
+  gap: 1rem;
   justify-content: space-between;
   padding: 0.7rem 1rem;
   background: #eaf0fb;
@@ -265,6 +298,13 @@ td a:hover { text-decoration: underline; }
 
 .doc-id { font-weight: 600; }
 .doc-date { color: var(--muted); }
+.doc-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.doc-link:hover { text-decoration: underline; }
 
 .party-table { font-size: 0.88rem; }
 
@@ -296,6 +336,15 @@ td a:hover { text-decoration: underline; }
   min-height: 420px;
   border-radius: 10px;
   border: 1px solid var(--border);
+}
+
+.locator-map {
+  width: 240px;
+  height: 240px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin: 1rem 0 1.5rem;
+  cursor: default;
 }
 
 .leaflet-popup-content {

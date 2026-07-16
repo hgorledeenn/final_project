@@ -1,5 +1,7 @@
+import io
+
 import pandas as pd
-from flask import Flask, abort, render_template, request
+from flask import Flask, Response, abort, render_template, request
 
 from data_prep import build_people, load_data
 
@@ -7,9 +9,30 @@ app = Flask(__name__)
 BUILDINGS, PARTIES = load_data()
 PEOPLE = build_people(BUILDINGS, PARTIES)
 
+ACRIS_DOCUMENT_URL = "https://a836-acris.nyc.gov/DS/DocumentSearch/DocumentImageView?doc_id={}"
+
 
 def _sorted_options(series):
     return sorted(series.dropna().unique().tolist())
+
+
+def _wants_csv():
+    return request.args.get("export") == "csv"
+
+
+def _csv_response(df, column_labels, filename):
+    buffer = io.StringIO()
+    df[list(column_labels.keys())].rename(columns=column_labels).to_csv(buffer, index=False)
+    return Response(
+        buffer.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.template_global()
+def acris_url(document_id):
+    return ACRIS_DOCUMENT_URL.format(document_id)
 
 
 @app.route("/")
@@ -52,6 +75,27 @@ def buildings_list():
         rows = rows[rows["property_type_label"] == property_type]
     if search:
         rows = rows[rows["building_address"].str.lower().str.contains(search, na=False)]
+
+    if _wants_csv():
+        return _csv_response(
+            rows,
+            {
+                "buildingid": "Building ID",
+                "building_address": "Address",
+                "owner_display": "Registered Owner",
+                "owner_group": "Institution",
+                "boro_label": "Borough",
+                "property_type_label": "Property Type",
+                "property_type": "Property Type Code",
+                "block": "Block",
+                "lot": "Lot",
+                "bin": "BIN",
+                "building_zip": "ZIP",
+                "lat": "Latitude",
+                "lon": "Longitude",
+            },
+            "buildings.csv",
+        )
 
     return render_template(
         "buildings.html",
@@ -119,6 +163,20 @@ def people_list():
     if multi_only:
         rows = rows[rows["owner_count"] > 1]
 
+    if _wants_csv():
+        return _csv_response(
+            rows,
+            {
+                "person_id": "Person ID",
+                "name": "Name",
+                "owners_display": "Institution(s)",
+                "properties": "Properties",
+                "documents": "Documents",
+                "roles_display": "Role(s)",
+            },
+            "people.csv",
+        )
+
     result_count = len(rows)
     display_limit = 500
     rows = rows.head(display_limit)
@@ -148,6 +206,23 @@ def person_detail(person_id):
         on="buildingid",
         how="left",
     )
+
+    if _wants_csv():
+        export_df = related[
+            ["document_id", "recorded_date", "party_type_label", "building_address", "owner_display", "boro_label"]
+        ].drop_duplicates().sort_values("recorded_date", ascending=False, na_position="last")
+        return _csv_response(
+            export_df,
+            {
+                "recorded_date": "Recorded Date",
+                "document_id": "Document ID",
+                "party_type_label": "Role",
+                "building_address": "Property Address",
+                "owner_display": "Registered Owner",
+                "boro_label": "Borough",
+            },
+            f"person_{person_id}_documents.csv",
+        )
 
     properties = []
     for building_id, group in related.groupby("buildingid", sort=False):
@@ -179,6 +254,28 @@ def building_detail(building_id):
     building = building_rows.iloc[0].to_dict()
 
     related = PARTIES[PARTIES["buildingid"] == building_id]
+
+    if _wants_csv():
+        export_df = related.sort_values(
+            ["recorded_date", "party_type"], ascending=[False, True], na_position="last"
+        )
+        return _csv_response(
+            export_df,
+            {
+                "recorded_date": "Recorded Date",
+                "document_id": "Document ID",
+                "party_type_label": "Role",
+                "name": "Name",
+                "address_1": "Address 1",
+                "address_2": "Address 2",
+                "city": "City",
+                "state": "State",
+                "zip": "ZIP",
+                "country": "Country",
+            },
+            f"building_{building_id}_documents.csv",
+        )
+
     documents = []
     for document_id, group in related.groupby("document_id", sort=False):
         recorded_date = group["recorded_date"].iloc[0]
