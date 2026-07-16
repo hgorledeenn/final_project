@@ -251,6 +251,14 @@ td a:hover { text-decoration: underline; }
   padding: 2rem;
 }
 
+.building-header-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -259,7 +267,8 @@ td a:hover { text-decoration: underline; }
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 1.25rem 1.5rem;
-  margin: 1.5rem 0;
+  flex: 1;
+  min-width: 260px;
 }
 
 .detail-grid > div {
@@ -341,11 +350,25 @@ td a:hover { text-decoration: underline; }
 .locator-map {
   width: 240px;
   height: 240px;
+  flex: 0 0 240px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  margin: 1rem 0 1.5rem;
-  cursor: default;
 }
+
+.recenter-btn {
+  width: 26px;
+  height: 26px;
+  background: var(--surface);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0;
+}
+
+.recenter-btn:hover { background: var(--bg); }
 
 .leaflet-popup-content {
   font-family: inherit;

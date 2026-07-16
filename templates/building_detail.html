@@ -10,53 +10,69 @@
 <h1>{{ building.building_address }}</h1>
 <p class="subtitle">Registered owner: <strong>{{ building.owner_display }}</strong></p>
 
-<section class="detail-grid">
-  <div><span class="k">Borough</span><span class="v">{{ building.boro_label }}</span></div>
-  <div><span class="k">Block / Lot</span><span class="v">{{ building.block }} / {{ building.lot }}</span></div>
-  <div><span class="k">BIN</span><span class="v">{{ building.bin | int }}</span></div>
-  <div><span class="k">Property type</span><span class="v">{{ building.property_type_label }} ({{ building.property_type }})</span></div>
-  <div><span class="k">ZIP</span><span class="v">{{ building.building_zip or "—" }}</span></div>
-</section>
+<div class="building-header-row">
+  <section class="detail-grid">
+    <div><span class="k">Borough</span><span class="v">{{ building.boro_label }}</span></div>
+    <div><span class="k">Block / Lot</span><span class="v">{{ building.block }} / {{ building.lot }}</span></div>
+    <div><span class="k">BIN</span><span class="v">{{ building.bin | int }}</span></div>
+    <div><span class="k">Property type</span><span class="v">{{ building.property_type_label }} ({{ building.property_type }})</span></div>
+    <div><span class="k">ZIP</span><span class="v">{{ building.building_zip or "—" }}</span></div>
+  </section>
 
-{% if building.lat and building.lon %}
-<div id="locatorMap" class="locator-map"></div>
-<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
-<script>
-  const locatorMap = L.map('locatorMap', {
-    zoomControl: false,
-    dragging: false,
-    touchZoom: false,
-    doubleClickZoom: false,
-    scrollWheelZoom: false,
-    boxZoom: false,
-    keyboard: false,
-    tap: false,
-  });
+  {% if building.lat and building.lon %}
+  <div id="locatorMap" class="locator-map"></div>
+  <script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+  <script>
+    const nycBounds = [
+      [40.49, -74.26],
+      [40.92, -73.70],
+    ];
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 19,
-  }).addTo(locatorMap);
+    const locatorMap = L.map('locatorMap', {
+      zoomControl: true,
+      dragging: true,
+      touchZoom: true,
+      doubleClickZoom: false,
+      scrollWheelZoom: false,
+      boxZoom: false,
+      keyboard: false,
+    });
 
-  // Fixed bounds covering all five boroughs, so every building shows in the
-  // same citywide context rather than a per-building zoom level.
-  locatorMap.fitBounds([
-    [40.49, -74.26],
-    [40.92, -73.70],
-  ]);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19,
+    }).addTo(locatorMap);
 
-  L.circleMarker([{{ building.lat }}, {{ building.lon }}], {
-    radius: 7,
-    color: '#ffffff',
-    weight: 2,
-    fillColor: '{{ building.marker_color }}',
-    fillOpacity: 0.9,
-  }).addTo(locatorMap);
-</script>
-{% else %}
-<p class="empty">Location unavailable for this building.</p>
-{% endif %}
+    // Start zoomed out to all five boroughs, for citywide context.
+    locatorMap.fitBounds(nycBounds);
+
+    L.circleMarker([{{ building.lat }}, {{ building.lon }}], {
+      radius: 7,
+      color: '#ffffff',
+      weight: 2,
+      fillColor: '{{ building.marker_color }}',
+      fillOpacity: 0.9,
+    }).addTo(locatorMap);
+
+    const RecenterControl = L.Control.extend({
+      options: { position: 'topright' },
+      onAdd: function () {
+        const btn = L.DomUtil.create('button', 'leaflet-bar recenter-btn');
+        btn.type = 'button';
+        btn.title = 'Recenter';
+        btn.innerHTML = '&#10021;';
+        btn.onclick = () => locatorMap.fitBounds(nycBounds);
+        L.DomEvent.disableClickPropagation(btn);
+        return btn;
+      },
+    });
+    locatorMap.addControl(new RecenterControl());
+  </script>
+  {% else %}
+  <p class="empty">Location unavailable for this building.</p>
+  {% endif %}
+</div>
 
 <div class="section-header">
   <h2>Deed &amp; mortgage records tied to this parcel</h2>
