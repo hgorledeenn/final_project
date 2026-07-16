@@ -35,7 +35,7 @@ def acris_url(document_id):
     return ACRIS_DOCUMENT_URL.format(document_id)
 
 
-@app.route("/")
+@app.route("/dashboard")
 def dashboard():
     total_buildings = len(BUILDINGS)
     total_owners = BUILDINGS["owner_group"].nunique()
@@ -112,7 +112,7 @@ def buildings_list():
     )
 
 
-@app.route("/map")
+@app.route("/")
 def map_view():
     mappable = BUILDINGS.dropna(subset=["lat", "lon"])
     points = [

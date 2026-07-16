@@ -1,14 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Map - Who Owns This Block{% endblock %}
+{% block title %}Who Owns This Block{% endblock %}
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
 {% endblock %}
 {% block content %}
 
-<h1>Map</h1>
+<h1>Who Owns This Block</h1>
 <p class="subtitle">
-  Every building, geocoded from its registered address and colored by institution.
-  Click a dot for details, or filter below to narrow what's shown.
+  Every university-owned building in NYC, geocoded from its registered address
+  and colored by institution. Search an address, click a dot for details, or
+  filter below to narrow what's shown.
   {% if mapped_count < total_count %}({{ total_count - mapped_count }} of {{ total_count }} buildings couldn't be located and aren't shown.){% endif %}
 </p>
 
@@ -28,6 +29,8 @@
 </div>
 
 <form class="filters" id="mapFilters">
+  <input type="text" id="addressSearch" placeholder="Search address…">
+
   <select name="owner" id="ownerFilter">
     <option value="">All institutions</option>
     {% for owner in owners %}
@@ -125,6 +128,7 @@
 
   function currentFilters() {
     return {
+      search: document.getElementById('addressSearch').value.trim().toLowerCase(),
       owner: document.getElementById('ownerFilter').value,
       boro: document.getElementById('boroFilter').value,
       property_type: document.getElementById('propertyTypeFilter').value,
@@ -134,9 +138,10 @@
   }
 
   function render() {
-    const { owner, boro, property_type, year, showUnknown } = currentFilters();
+    const { search, owner, boro, property_type, year, showUnknown } = currentFilters();
 
     const filtered = points.filter((p) => {
+      if (search && !p.address.toLowerCase().includes(search)) return false;
       if (owner && p.owner_group !== owner) return false;
       if (boro && p.boro !== boro) return false;
       if (property_type && p.property_type !== property_type) return false;
@@ -167,6 +172,16 @@
   ['ownerFilter', 'boroFilter', 'propertyTypeFilter'].forEach((id) => {
     document.getElementById(id).addEventListener('change', render);
   });
+
+  function debounce(fn, delay) {
+    let timer = null;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  document.getElementById('addressSearch').addEventListener('input', debounce(render, 250));
 
   document.getElementById('resetFilters').addEventListener('click', (e) => {
     e.preventDefault();

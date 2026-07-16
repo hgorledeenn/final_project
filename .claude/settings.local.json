@@ -36,7 +36,8 @@
       "Bash(curl -s \"http://127.0.0.1:5000/map\")",
       "Bash(curl -s -o /dev/null -w \"brooklyn building: %{http_code}\\\\n\" http://127.0.0.1:5000/buildings/302463)",
       "Bash(sed '1d;$d')",
-      "Bash(node --check /tmp/map_script.js)"
+      "Bash(node --check /tmp/map_script.js)",
+      "Bash(node --check /tmp/map_script2.js)"
     ]
   }
 }
