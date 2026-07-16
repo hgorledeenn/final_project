@@ -155,13 +155,17 @@ h1 { margin-bottom: 0.25rem; }
 
 .filters button:hover { background: var(--accent-dark); }
 
-.filters button.export-btn {
+button.export-btn {
+  padding: 0.5rem 1.1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
   background: transparent;
   color: var(--accent);
   border: 1px solid var(--accent);
 }
 
-.filters button.export-btn:hover {
+button.export-btn:hover {
   background: var(--surface);
   color: var(--accent-dark);
   border-color: var(--accent-dark);
@@ -338,6 +342,38 @@ td a:hover { text-decoration: underline; }
   border-radius: 50%;
   display: inline-block;
   border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.timeline {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+}
+
+.timeline .subtitle {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+.timeline-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.timeline-controls input[type="range"] {
+  flex: 1;
+  min-width: 160px;
+  accent-color: var(--accent);
+}
+
+.timeline-controls .year-label {
+  font-weight: 700;
+  min-width: 3.5ch;
+  text-align: center;
 }
 
 #map {

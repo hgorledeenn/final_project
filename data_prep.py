@@ -17,6 +17,18 @@ OWNER_COLORS = {
 }
 DEFAULT_OWNER_COLOR = "#10131a"
 
+# Substrings that identify the university itself (as opposed to some other
+# grantor/grantee) when it shows up as a named party on a document. Used only
+# to estimate acquisition years - see _estimate_acquired_years().
+OWNER_NAME_ALIASES = {
+    "Columbia University": ["COLUMBIA"],
+    "New York University": ["NEW YORK UNIVERSITY", "NYU"],
+    "Pratt Institute": ["PRATT"],
+    "Fordham University": ["FORDHAM"],
+    "The New School": ["NEW SCHOOL"],
+    "St. John's University": ["ST JOHN", "ST. JOHN"],
+}
+
 # Maps every raw corporationname spelling/typo found in the data to a
 # (owner group, cleaned display name) pair. Distinct legal entities (e.g. NYU
 # itself vs. its real-estate subsidiary vs. its law-school foundation) are
@@ -146,6 +158,31 @@ def _recorded_date(document_id):
     return f"{year}-{month}-{day}"
 
 
+def _estimate_acquired_years(buildings, parties):
+    """Rough proxy for when a university acquired each parcel: the earliest
+    year the university's own name appears as the buyer/borrower (ACRIS
+    Party 2 convention) on a document tied to that building's block/lot.
+
+    This is an approximation, not a verified acquisition date - the dataset
+    has no document-type field, so it can't tell a purchase deed apart from
+    a refinancing or correction filing, and it only catches parties on
+    documents that are digitized in ACRIS (digital coverage for many NYC
+    boroughs really only gets dense from the early-to-mid 2000s on). Most
+    older acquisitions won't get an estimate at all.
+    """
+    merged = parties.merge(buildings[["buildingid", "owner_group"]], on="buildingid", how="left")
+    merged = merged[(merged["party_type"] == 2) & merged["recorded_date"].notna()]
+
+    def is_owner_party(row):
+        aliases = OWNER_NAME_ALIASES.get(row["owner_group"], [])
+        name = row["name"]
+        return isinstance(name, str) and any(alias in name.upper() for alias in aliases)
+
+    merged = merged[merged.apply(is_owner_party, axis=1)]
+    earliest = merged.groupby("buildingid")["recorded_date"].min()
+    return earliest.str[:4].astype(int)
+
+
 def load_data():
     df = pd.read_csv(CSV_PATH, dtype={"zip": "string"})
 
@@ -190,6 +227,9 @@ def load_data():
     parties = parties.drop_duplicates().sort_values(
         ["buildingid", "recorded_date", "party_type"], na_position="last"
     ).reset_index(drop=True)
+
+    acquired_years = _estimate_acquired_years(buildings, parties)
+    buildings["acquired_year"] = buildings["buildingid"].map(acquired_years)
 
     buildings = buildings.astype(object).where(pd.notnull(buildings), None)
     parties = parties.astype(object).where(pd.notnull(parties), None)

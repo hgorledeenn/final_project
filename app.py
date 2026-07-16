@@ -126,6 +126,7 @@ def map_view():
             "owner_group": b["owner_group"],
             "boro": b["boro_label"],
             "property_type": b["property_type_label"],
+            "acquired_year": int(b["acquired_year"]) if b["acquired_year"] is not None else None,
         }
         for b in mappable.to_dict(orient="records")
     ]
@@ -137,6 +138,10 @@ def map_view():
         .to_dict(orient="records")
     )
 
+    dated_years = BUILDINGS["acquired_year"].dropna()
+    timeline_min = int(dated_years.min()) if not dated_years.empty else None
+    timeline_max = int(dated_years.max()) if not dated_years.empty else None
+
     return render_template(
         "map.html",
         points=points,
@@ -146,6 +151,9 @@ def map_view():
         owners=_sorted_options(BUILDINGS["owner_group"]),
         boros=_sorted_options(BUILDINGS["boro_label"]),
         property_types=_sorted_options(BUILDINGS["property_type_label"]),
+        timeline_min=timeline_min,
+        timeline_max=timeline_max,
+        dated_count=len(dated_years),
     )
 
 

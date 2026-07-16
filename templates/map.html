@@ -19,6 +19,12 @@
     {{ item.owner_group }}
   </span>
   {% endfor %}
+  {% if timeline_min is not none %}
+  <span class="legend-item">
+    <span class="dot" style="background: #9aa0a8;"></span>
+    Acquisition date unknown
+  </span>
+  {% endif %}
 </div>
 
 <form class="filters" id="mapFilters">
@@ -47,6 +53,31 @@
   <a class="reset" href="#" id="resetFilters">Reset</a>
 </form>
 
+{% if timeline_min is not none %}
+<div class="timeline">
+  <p class="subtitle">
+    <strong>Acquisition timeline (estimated).</strong> For {{ dated_count }} of
+    {{ mapped_count }} mapped buildings, we can estimate an acquisition year:
+    the earliest year the university's own name appears as the buyer/borrower
+    on a recorded document for that parcel. This dataset has no document-type
+    field, so it can't tell a purchase deed apart from a refinancing, and it
+    only catches documents digitized in ACRIS (dense coverage really starts
+    in the early-to-mid 2000s) &mdash; so most older acquisitions have no
+    estimate and are always shown in gray, regardless of the year selected.
+  </p>
+
+  <div class="timeline-controls">
+    <button type="button" id="playBtn" class="export-btn">Play</button>
+    <input type="range" id="yearSlider" min="{{ timeline_min }}" max="{{ timeline_max }}" value="{{ timeline_max }}">
+    <span class="year-label" id="yearLabel">{{ timeline_max }}</span>
+    <label class="checkbox-label">
+      <input type="checkbox" id="showUnknownDates" checked>
+      Show undated buildings (gray)
+    </label>
+  </div>
+</div>
+{% endif %}
+
 <p class="result-count" id="mapResultCount"></p>
 
 <div id="map"></div>
@@ -67,19 +98,25 @@
   let hasFitBoundsOnce = false;
   let currentFiltered = points;
 
+  const yearSlider = document.getElementById('yearSlider');
+  const showUnknownDates = document.getElementById('showUnknownDates');
+
   function pointToMarker(p) {
+    const isUnknown = p.acquired_year === null;
     const marker = L.circleMarker([p.lat, p.lon], {
       radius: 7,
       color: '#ffffff',
       weight: 1,
-      fillColor: p.color,
-      fillOpacity: 0.55,
+      fillColor: isUnknown ? '#9aa0a8' : p.color,
+      fillOpacity: isUnknown ? 0.35 : 0.55,
     });
 
+    const yearLine = isUnknown ? 'Acquisition date unknown' : `Est. acquired ${p.acquired_year}`;
     marker.bindPopup(
       `<strong>${p.address}</strong><br>` +
       `${p.owner}<br>` +
       `${p.boro} &middot; ${p.property_type}<br>` +
+      `${yearLine}<br>` +
       `<a href="/buildings/${p.id}">View full details &rarr;</a>`
     );
 
@@ -91,17 +128,22 @@
       owner: document.getElementById('ownerFilter').value,
       boro: document.getElementById('boroFilter').value,
       property_type: document.getElementById('propertyTypeFilter').value,
+      year: yearSlider ? parseInt(yearSlider.value, 10) : null,
+      showUnknown: showUnknownDates ? showUnknownDates.checked : true,
     };
   }
 
   function render() {
-    const { owner, boro, property_type } = currentFilters();
+    const { owner, boro, property_type, year, showUnknown } = currentFilters();
 
-    const filtered = points.filter((p) =>
-      (!owner || p.owner_group === owner) &&
-      (!boro || p.boro === boro) &&
-      (!property_type || p.property_type === property_type)
-    );
+    const filtered = points.filter((p) => {
+      if (owner && p.owner_group !== owner) return false;
+      if (boro && p.boro !== boro) return false;
+      if (property_type && p.property_type !== property_type) return false;
+      if (year === null) return true;
+      if (p.acquired_year === null) return showUnknown;
+      return p.acquired_year <= year;
+    });
 
     currentFiltered = filtered;
 
@@ -109,8 +151,9 @@
     const markers = filtered.map(pointToMarker);
     markers.forEach((m) => markerLayer.addLayer(m));
 
+    const yearNote = year !== null ? ` as of ${year}` : '';
     document.getElementById('mapResultCount').textContent =
-      `Showing ${filtered.length} of ${points.length} mapped buildings`;
+      `Showing ${filtered.length} of ${points.length} mapped buildings${yearNote}`;
 
     if (markers.length) {
       const group = L.featureGroup(markers);
@@ -128,12 +171,60 @@
   document.getElementById('resetFilters').addEventListener('click', (e) => {
     e.preventDefault();
     document.getElementById('mapFilters').reset();
+    if (yearSlider) yearSlider.value = yearSlider.max;
+    if (showUnknownDates) showUnknownDates.checked = true;
+    stopPlaying();
+    updateYearLabel();
     render();
   });
 
+  let playing = false;
+  let playInterval = null;
+
+  function stopPlaying() {
+    playing = false;
+    clearInterval(playInterval);
+    const btn = document.getElementById('playBtn');
+    if (btn) btn.textContent = 'Play';
+  }
+
+  function updateYearLabel() {
+    const label = document.getElementById('yearLabel');
+    if (label && yearSlider) label.textContent = yearSlider.value;
+  }
+
+  if (yearSlider) {
+    yearSlider.addEventListener('input', () => {
+      updateYearLabel();
+      render();
+    });
+  }
+
+  if (showUnknownDates) {
+    showUnknownDates.addEventListener('change', render);
+  }
+
+  const playBtn = document.getElementById('playBtn');
+  if (playBtn && yearSlider) {
+    playBtn.addEventListener('click', () => {
+      if (playing) {
+        stopPlaying();
+        return;
+      }
+      playing = true;
+      playBtn.textContent = 'Pause';
+      playInterval = setInterval(() => {
+        const year = parseInt(yearSlider.value, 10);
+        yearSlider.value = year >= parseInt(yearSlider.max, 10) ? yearSlider.min : year + 1;
+        updateYearLabel();
+        render();
+      }, 700);
+    });
+  }
+
   function toCsv(rows) {
-    const headers = ['Building ID', 'Address', 'Registered Owner', 'Institution', 'Borough', 'Property Type', 'Latitude', 'Longitude'];
-    const keys = ['id', 'address', 'owner', 'owner_group', 'boro', 'property_type', 'lat', 'lon'];
+    const headers = ['Building ID', 'Address', 'Registered Owner', 'Institution', 'Borough', 'Property Type', 'Est. Acquisition Year', 'Latitude', 'Longitude'];
+    const keys = ['id', 'address', 'owner', 'owner_group', 'boro', 'property_type', 'acquired_year', 'lat', 'lon'];
     const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 
     const lines = [headers.map(escape).join(',')];
