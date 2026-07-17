@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}Methodology - Who Owns the University Next Door{% endblock %}
+{% block content %}
+
+<article class="prose">
+  <h1>Methodology</h1>
+  <p class="byline">Holden Green</p>
+
+  <h2>Introduction</h2>
+  <p>
+    Who do you think the largest private landowners are in New York City? One
+    can imagine the lists are filled with powerful family real estate
+    empires; perhaps rivaled only by the dominant companies they've
+    cultivated. Maybe it's private equity buying up residential properties
+    and fueling the ever-increasing NYC rent prices.
+  </p>
+  <p>
+    The reality? Columbia University, one of the city's oldest universities,
+    claimed the top spot on the list as a result of large investments in a
+    new campus extension further north into Harlem. NYU, another storied
+    institution, has garnered a massive land holdings portfolio (worth an
+    estimated $8&ndash;$15 billion), thanks largely to ever-increasing
+    property values in Greenwich Village.
+  </p>
+  <p>
+    Across the city, universities have quietly amassed massive real estate
+    portfolios. And, thanks to a property tax exemption for educational
+    nonprofits in New York City, the local government misses out on
+    potentially hundreds of millions of dollars annually.
+  </p>
+  <p>
+    This project brings together data from multiple sources into one
+    comprehensive, intuitive dashboard that allows non-technical viewers to
+    explore university land holdings and discover the data for themselves.
+  </p>
+
+  <h2>Sources</h2>
+  <p>
+    The data for this project comes from multiple public sources. None of
+    the data is itself private, though each of the pieces is found through a
+    separate, somewhat tedious search process, and no site aggregates it all
+    together in this way.
+  </p>
+  <p>The major sources are:</p>
+
+  <h3>Department of Housing Preservation and Development Data:</h3>
+  <ul>
+    <li>Multiple Dwelling Registrations</li>
+    <li>Registration Contacts</li>
+  </ul>
+
+  <h3>Automated City Register Information System (ACRIS) Data:</h3>
+  <ul>
+    <li>ACRIS Real Property Legals</li>
+    <li>ACRIS Real Property Master</li>
+    <li>ACRIS Real Property Parties</li>
+  </ul>
+
+  <p>
+    The Department of Housing Preservation and Development keeps and makes
+    public records about the owners of residential buildings that meet
+    certain criteria. In the department's own words:
+  </p>
+  <blockquote>
+    Pursuant to New York City's Housing Maintenance Code, the Department of
+    Housing Preservation and Development (HPD) collects registration
+    information from owners of residential rental units. Owners are required
+    to register if they own residential buildings with three or more units
+    or if they own one- or two-family homes and neither they nor members of
+    their immediate family live there. Registrations are required upon
+    taking ownership of a qualifying building, and once a year thereafter.
+  </blockquote>
+  <p>
+    This data contains information about any registered buildings, including
+    their address, borough/block/lot numbers, registration ID and building
+    ID. The other HPD database includes name and limited contact information
+    about the owners who registered their buildings.
+  </p>
+  <p>
+    The other data sets &mdash; from the Automated City Register Information
+    System &mdash; contain data about legal documents filed related to
+    properties in the city. The Legals dataset is helpful for matching HPD
+    data (based on Borough/Block/Lot) to document IDs. From there, the other
+    two datasets have information about documents and related parties.
+  </p>
+
+  <h2>Data Gathering</h2>
+  <p>
+    The data gathering phase started at the HPD data. Before downloading the
+    datasets, the Registration Contacts data was filtered based on the
+    &ldquo;Corporation Name&rdquo; column. In particular, I returned only
+    results where the corporation name matched one of these results:
+  </p>
+
+  <div class="alias-groups">
+    <div>
+      <h3>Columbia University</h3>
+      <ul>
+        <li>&ldquo;COLUMBIA UNIVERSITY&rdquo;</li>
+        <li>&ldquo;TEACHERS COLLEGE-COLUMBIA UNIV&rdquo;</li>
+        <li>&ldquo;THE TRUSTEES OF COLUMBIA UNIVERSITY&rdquo;</li>
+        <li>&ldquo;TRUSTEE OF COLUMBIA UNIVERSITY&rdquo;</li>
+        <li>&ldquo;TRUSTEES OF COLUMBIA UNIVERSITY'&rdquo;</li>
+        <li>&ldquo;TRUSTEES OF COLUMBIA UNIVERSITY&rdquo;</li>
+        <li>&ldquo;TRUSTEES OF COLUMBIA UNIVERSITY CIT&rdquo;</li>
+      </ul>
+    </div>
+    <div>
+      <h3>New York University</h3>
+      <ul>
+        <li>&ldquo;NYU REAL ESTATE CORP&rdquo;</li>
+        <li>&ldquo;NYU REAL ESATE CORP&rdquo;</li>
+        <li>&ldquo;NYU School of Law Foundation&rdquo;</li>
+        <li>&ldquo;NYU SCHOOL OF LAW FOUNDATION&rdquo;</li>
+        <li>&ldquo;New York University&rdquo;</li>
+        <li>&ldquo;NEW YORK UNIVESITY&rdquo;</li>
+      </ul>
+    </div>
+    <div>
+      <h3>St. John's University</h3>
+      <ul>
+        <li>&ldquo;St. Johns University&rdquo;</li>
+        <li>&ldquo;ST.JOHNS UNIVERSITY&rdquo;</li>
+        <li>&ldquo;ST JOHNS UNIVERSITY, NEW YORK&rdquo;</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Pratt Institute</h3>
+      <ul>
+        <li>&ldquo;PRATT INSTITUTE&rdquo;</li>
+        <li>&ldquo;PRATT INSTITUTE FACILITIES DEPARTMENT&rdquo;</li>
+      </ul>
+    </div>
+    <div>
+      <h3>The New School</h3>
+      <ul>
+        <li>&ldquo;THE NEW SCHOOL&rdquo;</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Fordham University</h3>
+      <ul>
+        <li>&ldquo;FORDHAM UNIVERSITY&rdquo;</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>
+    I then matched the exported Registration Contacts data with the full
+    Multiple Dwelling Registrations data, based on the RegistrationID column.
+  </p>
+  <p>
+    For matching the ACRIS data, I combined the combined HPD data with the
+    ACRIS Legals data set based on the borough, block and lot numbers of the
+    buildings, then brought in the other two ACRIS data sets based on
+    Document ID.
+  </p>
+  <p>
+    There are often multiple documents per building, so my ultimate
+    dashboard shows information aggregated at the building level, with the
+    option to view more about each building's particular historical
+    documents.
+  </p>
+
+  <h2>Scope: Population, Timeframe</h2>
+  <p>
+    The current iteration of my dashboard shows 238 buildings across the 6
+    schools I'm focusing on. This is certainly an under-count (which one can
+    observe by simply looking at the missing parcels on the map view of the
+    dashboard), but I can be pretty certain that the buildings within my
+    database do belong to the universities.
+  </p>
+
+  <h2>Critique</h2>
+  <p>
+    Because I started my search with the HPD data, the universe of data I'm
+    working in is primarily housing-related. While this is interesting (and
+    universities obviously operate a lot of housing for their students), it
+    might not totally reflect a university's land holdings.
+  </p>
+  <p>
+    I am in the process of reversing my search process: starting with ACRIS
+    parties data and filtering that based on names that are associated with
+    universities, then matching in other ACRIS data based on document ID and
+    bringing in HPD or other data based on borough/block/lot information.
+    This search procedure would cast a wider net (starting beyond
+    housing-specific data), even though some of the non-residential
+    buildings might not benefit from the additional contact information
+    available from the HPD data sets.
+  </p>
+  <p>
+    The current process also requires human involvement to run. Ideally,
+    this process would be automated and scheduled to run periodically on its
+    own so as to keep the information in the dashboard fully up-to-date.
+  </p>
+  <p>
+    Finally, this procedure will successfully identify buildings that are
+    openly listed in public data as owned by any of these universities.
+    While there has not been widespread reporting or concern about NYC
+    schools buying or owning land under aliases or shell LLCs, my search
+    would not find any such properties. A work around could potentially be
+    found (e.g. by connecting related parties' names or by using other
+    university resources like campus maps), but that would require further
+    research and coding to become part of this project.
+  </p>
+
+  <h2>Dashboard Design</h2>
+  <p>
+    The design of the dashboard is intended to make it easy for a user to
+    interface with the data. The landing page for the dashboard is a map
+    view of the data, along with an abbreviated stats display. A viewer can
+    see building-specific information by interacting with the map itself, or
+    else they can navigate to a view that displays all the buildings or all
+    the entities as tables.
+  </p>
+  <p>
+    Opening with a map presents this data in the most intuitive way &mdash;
+    geographically &mdash; while allowing for more thorough searching or
+    filtering in a traditional table/sheet environment.
+  </p>
+
+  <h2>Conclusion</h2>
+  <p>
+    This dashboard does, I think, meaningfully help non-technical users
+    understand some of the scope of university land holdings in the city.
+    While some more work is needed to expand my dataset beyond the HPD-first
+    search I started with, even this look is helpful for readers. Whether
+    it's the scores of blue dots near Columbia's Morningside Heights campus
+    or the assortment of purple ones circling NYU's Greenwich Village
+    sprawl, this tool shows some of the sheer amount of buildings owned by
+    universities in the city, and meaningfully brings together historical
+    records and legal documents in one intuitive, easy to use dashboard.
+  </p>
+
+  <p class="source-note">
+    Adapted from the project's methodology write-up. A few citation and
+    source-dataset hyperlinks from the original document couldn't be carried
+    over automatically and are shown here as plain text.
+  </p>
+</article>
+
+{% endblock %}

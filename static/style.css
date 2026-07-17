@@ -623,3 +623,57 @@ button.export-btn.active {
   padding: 2rem;
 }
 
+.prose {
+  max-width: 72ch;
+  line-height: 1.6;
+}
+
+.prose h2 {
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose h2:first-of-type { margin-top: 1.5rem; }
+
+.prose h3 {
+  margin-bottom: 0.4rem;
+  font-size: 1rem;
+}
+
+.prose p { margin: 0 0 1rem; }
+
+.prose ul {
+  margin: 0 0 1rem;
+  padding-left: 1.4rem;
+}
+
+.prose li { margin-bottom: 0.2rem; }
+
+.prose blockquote {
+  margin: 1rem 0;
+  padding: 0.75rem 1.25rem;
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  color: var(--muted);
+  font-style: italic;
+}
+
+.prose .alias-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem 2rem;
+  margin: 0 0 1.5rem;
+}
+
+.prose .alias-groups h3 { margin-bottom: 0.3rem; }
+
+.prose .byline {
+  color: var(--muted);
+  margin: 0 0 1.5rem;
+}
+
+.prose .source-note {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+

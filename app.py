@@ -36,6 +36,11 @@ def acris_url(document_id):
     return ACRIS_DOCUMENT_URL.format(document_id)
 
 
+@app.route("/methodology")
+def methodology():
+    return render_template("methodology.html")
+
+
 @app.route("/buildings")
 def buildings_list():
     owner = request.args.get("owner", "")
