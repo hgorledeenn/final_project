@@ -344,12 +344,55 @@ td a:hover { text-decoration: underline; }
   border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
+/* Map landing page: tighter vertical rhythm than the rest of the site so
+   the map itself gets more of the viewport. Scoped to .map-header so other
+   pages that reuse .subtitle/.filters/.legend/.result-count are unaffected. */
+.map-header h1 { margin-bottom: 0.15rem; }
+
+.map-header .subtitle {
+  margin: 0 0 0.6rem;
+  font-size: 0.92rem;
+}
+
+.map-header .legend {
+  margin: 0 0 0.6rem;
+  gap: 0.4rem 1rem;
+}
+
+.map-header .filters {
+  margin: 0 0 0.5rem;
+  gap: 0.5rem;
+}
+
+.map-header .result-count {
+  margin: 0.4rem 0;
+}
+
+.beta-tag {
+  display: inline-block;
+  background: #f59e0b;
+  color: #1a1200;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+}
+
+button.export-btn.active {
+  background: var(--accent);
+  color: white;
+}
+
 .timeline {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 1rem 1.25rem;
-  margin: 1rem 0;
+  margin: 0 0 0.75rem;
 }
 
 .timeline .subtitle {

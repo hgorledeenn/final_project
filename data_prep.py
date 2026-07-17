@@ -17,17 +17,39 @@ OWNER_COLORS = {
 }
 DEFAULT_OWNER_COLOR = "#10131a"
 
-# Substrings that identify the university itself (as opposed to some other
-# grantor/grantee) when it shows up as a named party on a document. Used only
-# to estimate acquisition years - see _estimate_acquired_years().
+# Word-boundary phrases that identify the university itself (as opposed to
+# some other grantor/grantee) when it shows up as a named party on a
+# document. Used to estimate acquisition years (_estimate_acquired_years)
+# and for the comprehensive ACRIS parcel search (find_university_properties.py).
+#
+# These are deliberately full institutional phrases, not bare surnames or
+# generic words - e.g. "COLUMBIA" alone also matches unrelated entities like
+# "Columbia Title Co." or "Columbia Realty LLC" citywide, and "PRATT"/
+# "FORDHAM"/"ST JOHN" are common surnames, neighborhood, and street names.
+# An earlier version of this list used single generic words and produced
+# tens of thousands of false-positive parcel matches - see the comprehensive
+# search script's git history/output for that failure mode.
 OWNER_NAME_ALIASES = {
-    "Columbia University": ["COLUMBIA"],
+    "Columbia University": ["COLUMBIA UNIV", "COLUMBIA CLLG", "COLUMBIA COLLEGE IN THE CITY"],
     "New York University": ["NEW YORK UNIVERSITY", "NYU"],
-    "Pratt Institute": ["PRATT"],
-    "Fordham University": ["FORDHAM"],
+    "Pratt Institute": ["PRATT INSTITUTE", "PRATT INSTUTUTE"],
+    "Fordham University": ["FORDHAM UNIVERSITY", "FORDHAM UNIV"],
     "The New School": ["NEW SCHOOL"],
-    "St. John's University": ["ST JOHN", "ST. JOHN"],
+    "St. John's University": ["ST JOHNS UNIVERSITY", "ST. JOHNS UNIVERSITY", "SAINT JOHNS UNIVERSITY", "ST JOHN'S UNIVERSITY"],
 }
+
+
+def name_matches_owner(name, owner_group):
+    """Word-boundary check: does `name` contain one of owner_group's aliases
+    as a whole phrase, not just as a substring of some unrelated word?
+    """
+    if not isinstance(name, str):
+        return False
+    upper = name.upper()
+    for alias in OWNER_NAME_ALIASES.get(owner_group, []):
+        if re.search(r"\b" + re.escape(alias) + r"\b", upper):
+            return True
+    return False
 
 # Maps every raw corporationname spelling/typo found in the data to a
 # (owner group, cleaned display name) pair. Distinct legal entities (e.g. NYU
@@ -173,12 +195,8 @@ def _estimate_acquired_years(buildings, parties):
     merged = parties.merge(buildings[["buildingid", "owner_group"]], on="buildingid", how="left")
     merged = merged[(merged["party_type"] == 2) & merged["recorded_date"].notna()]
 
-    def is_owner_party(row):
-        aliases = OWNER_NAME_ALIASES.get(row["owner_group"], [])
-        name = row["name"]
-        return isinstance(name, str) and any(alias in name.upper() for alias in aliases)
-
-    merged = merged[merged.apply(is_owner_party, axis=1)]
+    is_owner_party = merged.apply(lambda row: name_matches_owner(row["name"], row["owner_group"]), axis=1)
+    merged = merged[is_owner_party]
     earliest = merged.groupby("buildingid")["recorded_date"].min()
     return earliest.str[:4].astype(int)
 

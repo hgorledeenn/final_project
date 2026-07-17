@@ -5,83 +5,88 @@
 {% endblock %}
 {% block content %}
 
-<h1>Who Owns This Block</h1>
-<p class="subtitle">
-  Every university-owned building in NYC, geocoded from its registered address
-  and colored by institution. Search an address, click a dot for details, or
-  filter below to narrow what's shown.
-  {% if mapped_count < total_count %}({{ total_count - mapped_count }} of {{ total_count }} buildings couldn't be located and aren't shown.){% endif %}
-</p>
-
-<div class="legend">
-  {% for item in legend %}
-  <span class="legend-item">
-    <span class="dot" style="background: {{ item.marker_color }};"></span>
-    {{ item.owner_group }}
-  </span>
-  {% endfor %}
-  {% if timeline_min is not none %}
-  <span class="legend-item">
-    <span class="dot" style="background: #9aa0a8;"></span>
-    Acquisition date unknown
-  </span>
-  {% endif %}
-</div>
-
-<form class="filters" id="mapFilters">
-  <input type="text" id="addressSearch" placeholder="Search address…">
-
-  <select name="owner" id="ownerFilter">
-    <option value="">All institutions</option>
-    {% for owner in owners %}
-      <option value="{{ owner }}">{{ owner }}</option>
-    {% endfor %}
-  </select>
-
-  <select name="boro" id="boroFilter">
-    <option value="">All boroughs</option>
-    {% for boro in boros %}
-      <option value="{{ boro }}">{{ boro }}</option>
-    {% endfor %}
-  </select>
-
-  <select name="property_type" id="propertyTypeFilter">
-    <option value="">All property types</option>
-    {% for pt in property_types %}
-      <option value="{{ pt }}">{{ pt }}</option>
-    {% endfor %}
-  </select>
-
-  <button type="button" id="exportCsv" class="export-btn">Export CSV</button>
-  <a class="reset" href="#" id="resetFilters">Reset</a>
-</form>
-
-{% if timeline_min is not none %}
-<div class="timeline">
+<div class="map-header">
+  <h1>Who Owns This Block</h1>
   <p class="subtitle">
-    <strong>Acquisition timeline (estimated).</strong> For {{ dated_count }} of
-    {{ mapped_count }} mapped buildings, we can estimate an acquisition year:
-    the earliest year the university's own name appears as the buyer/borrower
-    on a recorded document for that parcel. This dataset has no document-type
-    field, so it can't tell a purchase deed apart from a refinancing, and it
-    only catches documents digitized in ACRIS (dense coverage really starts
-    in the early-to-mid 2000s) &mdash; so most older acquisitions have no
-    estimate and are always shown in gray, regardless of the year selected.
+    University-owned buildings in NYC, colored by institution. Search an
+    address, click a dot for details, or filter below.
+    {% if mapped_count < total_count %}({{ total_count - mapped_count }} of {{ total_count }} buildings couldn't be located and aren't shown.){% endif %}
   </p>
 
-  <div class="timeline-controls">
-    <button type="button" id="playBtn" class="export-btn">Play</button>
-    <input type="range" id="yearSlider" min="{{ timeline_min }}" max="{{ timeline_max }}" value="{{ timeline_max }}">
-    <span class="year-label" id="yearLabel">{{ timeline_max }}</span>
-    <label class="checkbox-label">
-      <input type="checkbox" id="showUnknownDates" checked>
-      Show undated buildings (gray)
-    </label>
+  <div class="legend">
+    {% for item in legend %}
+    <span class="legend-item">
+      <span class="dot" style="background: {{ item.marker_color }};"></span>
+      {{ item.owner_group }}
+    </span>
+    {% endfor %}
+    {% if timeline_min is not none %}
+    <span class="legend-item">
+      <span class="dot" style="background: #9aa0a8;"></span>
+      Acquisition date unknown
+    </span>
+    {% endif %}
   </div>
-</div>
-{% endif %}
 
-<p class="result-count" id="mapResultCount"></p>
+  <form class="filters" id="mapFilters">
+    <input type="text" id="addressSearch" placeholder="Search address…">
+
+    <select name="owner" id="ownerFilter">
+      <option value="">All institutions</option>
+      {% for owner in owners %}
+        <option value="{{ owner }}">{{ owner }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="boro" id="boroFilter">
+      <option value="">All boroughs</option>
+      {% for boro in boros %}
+        <option value="{{ boro }}">{{ boro }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="property_type" id="propertyTypeFilter">
+      <option value="">All property types</option>
+      {% for pt in property_types %}
+        <option value="{{ pt }}">{{ pt }}</option>
+      {% endfor %}
+    </select>
+
+    {% if timeline_min is not none %}
+    <button type="button" id="toggleTimeline" class="export-btn">Timeline <span class="beta-tag">Beta</span></button>
+    {% endif %}
+    <button type="button" id="exportCsv" class="export-btn">Export CSV</button>
+    <a class="reset" href="#" id="resetFilters">Reset</a>
+  </form>
+
+  {% if timeline_min is not none %}
+  <div class="timeline" id="timelinePanel" hidden>
+    <p class="subtitle">
+      <strong>Acquisition timeline (estimated) &mdash; <span class="beta-tag">Beta</span>.</strong>
+      For {{ dated_count }} of {{ mapped_count }} mapped buildings, we can estimate
+      an acquisition year: the earliest year the university's own name appears as
+      the buyer/borrower on a recorded document for that parcel. This dataset has
+      no document-type field, so it can't tell a purchase deed apart from a
+      refinancing, and it only catches documents digitized in ACRIS (dense
+      coverage really starts in the early-to-mid 2000s) &mdash; so most older
+      acquisitions have no estimate and are always shown in gray. Treat this as
+      an early, partial view rather than a verified ownership timeline.
+    </p>
+
+    <div class="timeline-controls">
+      <button type="button" id="playBtn" class="export-btn">Play</button>
+      <input type="range" id="yearSlider" min="{{ timeline_min }}" max="{{ timeline_max }}" value="{{ timeline_max }}">
+      <span class="year-label" id="yearLabel">{{ timeline_max }}</span>
+      <label class="checkbox-label">
+        <input type="checkbox" id="showUnknownDates" checked>
+        Show undated buildings (gray)
+      </label>
+    </div>
+  </div>
+  {% endif %}
+
+  <p class="result-count" id="mapResultCount"></p>
+</div>
 
 <div id="map"></div>
 
@@ -103,6 +108,15 @@
 
   const yearSlider = document.getElementById('yearSlider');
   const showUnknownDates = document.getElementById('showUnknownDates');
+
+  const toggleTimelineBtn = document.getElementById('toggleTimeline');
+  const timelinePanel = document.getElementById('timelinePanel');
+  if (toggleTimelineBtn && timelinePanel) {
+    toggleTimelineBtn.addEventListener('click', () => {
+      timelinePanel.hidden = !timelinePanel.hidden;
+      toggleTimelineBtn.classList.toggle('active', !timelinePanel.hidden);
+    });
+  }
 
   function pointToMarker(p) {
     const isUnknown = p.acquired_year === null;
