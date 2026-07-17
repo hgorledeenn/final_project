@@ -5,8 +5,6 @@ import pandas as pd
 
 CSV_PATH = "data/pt_2.csv"
 COORDS_PATH = "data/building_coords.csv"
-EXTENSION_BUILDINGS_PATH = "data/acris_extension_buildings.csv"
-EXTENSION_PARTIES_PATH = "data/acris_extension_parties.csv"
 
 # Distinct color per owner group, used for map markers.
 OWNER_COLORS = {
@@ -203,58 +201,6 @@ def _estimate_acquired_years(buildings, parties):
     return earliest.str[:4].astype(int)
 
 
-def _add_acris_extension(buildings, parties):
-    """Folds in buildings/parties found via a direct ACRIS name search
-    (see build_acris_extension.py) rather than an HPD registration. HPD
-    Multiple Dwelling Registration only covers residential rental buildings,
-    so a university's non-residential campus buildings - academic buildings,
-    offices, land - are structurally invisible to the pt_2.csv pipeline no
-    matter who owns them. This adds them back in as ordinary buildings/
-    parties rows, assigning each a synthetic buildingid past the highest one
-    already in use, so everything downstream (coords, marker color,
-    acquired-year estimate, the app's routes) treats them identically to an
-    HPD-sourced building.
-    """
-    try:
-        ext_buildings = pd.read_csv(EXTENSION_BUILDINGS_PATH)
-        ext_parties = pd.read_csv(EXTENSION_PARTIES_PATH, dtype={"document_id": str})
-    except FileNotFoundError:
-        return buildings, parties
-
-    owner_groups = ext_buildings["corporationname"].map(lambda n: OWNER_MAP.get(n, (n.title(), n.title()))[0])
-    owner_display = ext_buildings["corporationname"].map(lambda n: OWNER_MAP.get(n, (n.title(), n.title()))[1])
-    ext_buildings = ext_buildings.assign(owner_group=owner_groups, owner_display=owner_display)
-    ext_buildings["property_type_label"] = (
-        ext_buildings["property_type"].map(PROPERTY_TYPE_MAP).fillna(ext_buildings["property_type"])
-    )
-    ext_buildings["boro_label"] = ext_buildings["boro"].str.title()
-    ext_buildings["building_zip"] = None
-    ext_buildings["registrationid"] = None
-    ext_buildings["bin"] = None
-
-    next_id = int(buildings["buildingid"].max()) + 1
-    ext_buildings = ext_buildings.sort_values(["owner_group", "boro_label", "block", "lot"]).reset_index(drop=True)
-    ext_buildings["buildingid"] = range(next_id, next_id + len(ext_buildings))
-
-    parcel_to_id = dict(zip(ext_buildings["parcel_key"], ext_buildings["buildingid"]))
-    ext_parties["buildingid"] = ext_parties["parcel_key"].map(parcel_to_id)
-    ext_parties["party_type"] = ext_parties["party_type"].astype(int)
-
-    building_cols = buildings.columns.tolist()
-    buildings = pd.concat([buildings, ext_buildings[building_cols]], ignore_index=True)
-
-    ext_parties["name"] = ext_parties["name"].map(_normalize_name)
-    ext_parties["party_type_label"] = ext_parties["party_type"].map(PARTY_TYPE_LABELS).fillna("Party")
-    ext_parties["zip"] = ext_parties["zip"].map(_clean_zip)
-    ext_parties["recorded_date"] = ext_parties["document_id"].map(_recorded_date)
-    ext_parties = ext_parties.dropna(subset=["name"])
-
-    party_cols = parties.columns.tolist()
-    parties = pd.concat([parties, ext_parties[party_cols]], ignore_index=True)
-
-    return buildings, parties
-
-
 def load_data():
     df = pd.read_csv(CSV_PATH, dtype={"zip": "string"})
 
@@ -290,8 +236,6 @@ def load_data():
     parties = parties.drop_duplicates().sort_values(
         ["buildingid", "recorded_date", "party_type"], na_position="last"
     ).reset_index(drop=True)
-
-    buildings, parties = _add_acris_extension(buildings, parties)
 
     try:
         coords = pd.read_csv(COORDS_PATH)
