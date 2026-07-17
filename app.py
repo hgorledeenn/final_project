@@ -1,9 +1,10 @@
 import io
+from datetime import date
 
 import pandas as pd
 from flask import Flask, Response, abort, render_template, request
 
-from data_prep import build_people, load_data
+from data_prep import build_people, load_data, name_matches_owner
 
 app = Flask(__name__)
 BUILDINGS, PARTIES = load_data()
@@ -33,30 +34,6 @@ def _csv_response(df, column_labels, filename):
 @app.template_global()
 def acris_url(document_id):
     return ACRIS_DOCUMENT_URL.format(document_id)
-
-
-@app.route("/dashboard")
-def dashboard():
-    total_buildings = len(BUILDINGS)
-    total_owners = BUILDINGS["owner_group"].nunique()
-    total_parties = PARTIES["name"].nunique()
-
-    by_owner = BUILDINGS["owner_group"].value_counts()
-    by_boro = BUILDINGS["boro_label"].value_counts()
-    by_property_type = BUILDINGS["property_type_label"].value_counts().head(8)
-
-    return render_template(
-        "dashboard.html",
-        total_buildings=total_buildings,
-        total_owners=total_owners,
-        total_parties=total_parties,
-        owner_labels=by_owner.index.tolist(),
-        owner_values=by_owner.values.tolist(),
-        boro_labels=by_boro.index.tolist(),
-        boro_values=by_boro.values.tolist(),
-        property_labels=by_property_type.index.tolist(),
-        property_values=by_property_type.values.tolist(),
-    )
 
 
 @app.route("/buildings")
@@ -142,6 +119,8 @@ def map_view():
     timeline_min = int(dated_years.min()) if not dated_years.empty else None
     timeline_max = int(dated_years.max()) if not dated_years.empty else None
 
+    by_owner = BUILDINGS["owner_group"].value_counts()
+
     return render_template(
         "map.html",
         points=points,
@@ -154,6 +133,11 @@ def map_view():
         timeline_min=timeline_min,
         timeline_max=timeline_max,
         dated_count=len(dated_years),
+        total_buildings=len(BUILDINGS),
+        total_owners=BUILDINGS["owner_group"].nunique(),
+        total_parties=PARTIES["name"].nunique(),
+        owner_labels=by_owner.index.tolist(),
+        owner_values=by_owner.values.tolist(),
     )
 
 
@@ -287,16 +271,48 @@ def building_detail(building_id):
     documents = []
     for document_id, group in related.groupby("document_id", sort=False):
         recorded_date = group["recorded_date"].iloc[0]
+        parties = group.to_dict(orient="records")
+        is_acquisition_like = any(
+            p["party_type"] == 2 and name_matches_owner(p["name"], building["owner_group"]) for p in parties
+        )
         documents.append(
             {
                 "document_id": document_id,
                 "recorded_date": None if pd.isna(recorded_date) else recorded_date,
-                "parties": group.to_dict(orient="records"),
+                "is_acquisition_like": is_acquisition_like,
+                "parties": parties,
             }
         )
     documents.sort(key=lambda d: d["recorded_date"] or "", reverse=True)
 
-    return render_template("building_detail.html", building=building, documents=documents)
+    dated_docs = [(d, date.fromisoformat(d["recorded_date"])) for d in documents if d["recorded_date"]]
+    timeline_dots = []
+    timeline_min_label = timeline_max_label = None
+    if dated_docs:
+        min_date = min(dt for _, dt in dated_docs)
+        max_date = max(dt for _, dt in dated_docs)
+        span_days = (max_date - min_date).days or 1
+        for d, dt in dated_docs:
+            timeline_dots.append(
+                {
+                    "document_id": d["document_id"],
+                    "recorded_date": d["recorded_date"],
+                    "is_acquisition_like": d["is_acquisition_like"],
+                    "left_pct": round((dt - min_date).days / span_days * 100, 2),
+                }
+            )
+        timeline_min_label = min_date.isoformat()
+        timeline_max_label = max_date.isoformat()
+
+    return render_template(
+        "building_detail.html",
+        building=building,
+        documents=documents,
+        timeline_dots=timeline_dots,
+        timeline_min_label=timeline_min_label,
+        timeline_max_label=timeline_max_label,
+        undated_count=len(documents) - len(dated_docs),
+    )
 
 
 if __name__ == "__main__":

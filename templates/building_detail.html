@@ -74,6 +74,35 @@
   {% endif %}
 </div>
 
+{% if timeline_dots %}
+<div class="doc-timeline">
+  <p class="subtitle">
+    <strong>Document timeline.</strong> Each dot is one document filed against
+    this parcel, placed by its recorded date &mdash; hover a dot for details,
+    click to jump straight to it below.
+    {% if undated_count %}{{ undated_count }} document(s) with no parseable date aren't shown here.{% endif %}
+    ACRIS doesn't give us an actual document type (deed vs. mortgage, etc.)
+    for this data, so dots aren't categorized by type &mdash; just placed in time.
+  </p>
+  <div class="doc-timeline-track">
+    {% for dot in timeline_dots %}
+    <a class="doc-timeline-dot" style="left: {{ dot.left_pct }}%;" href="#doc-{{ dot.document_id }}">
+      <span class="doc-timeline-tip">
+        <strong>{{ dot.recorded_date }}</strong><br>
+        Document {{ dot.document_id }}<br>
+        {% if dot.is_acquisition_like %}Owner appears as buyer/borrower<br>{% endif %}
+        <span class="doc-timeline-tip-cta">Click to view details &darr;</span>
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+  <div class="doc-timeline-labels">
+    <span>{{ timeline_min_label }}</span>
+    <span>{{ timeline_max_label }}</span>
+  </div>
+</div>
+{% endif %}
+
 <div class="section-header">
   <h2>Deed &amp; mortgage records tied to this parcel</h2>
   <a class="export-link" href="{{ url_for('building_detail', building_id=building.buildingid, export='csv') }}">Export CSV</a>
@@ -90,27 +119,29 @@
 </p>
 
 {% for doc in documents %}
-<div class="doc-card">
+<div class="doc-card" id="doc-{{ doc.document_id }}">
   <div class="doc-header">
     <span class="doc-id">Document {{ doc.document_id }}</span>
     <span class="doc-date">{{ doc.recorded_date or "date unknown" }}</span>
     <a class="doc-link" href="{{ acris_url(doc.document_id) }}" target="_blank" rel="noopener">View on ACRIS &rarr;</a>
   </div>
-  <table class="party-table">
-    <thead>
-      <tr><th>Role</th><th>Name</th><th>Address</th><th>City/State/ZIP</th></tr>
-    </thead>
-    <tbody>
-      {% for p in doc.parties %}
-      <tr>
-        <td>{{ p.party_type_label }}</td>
-        <td>{{ p.name }}</td>
-        <td>{{ p.address_1 or "" }} {{ p.address_2 or "" }}</td>
-        <td>{{ p.city or "" }}{% if p.city and p.state %}, {% endif %}{{ p.state or "" }} {{ p.zip or "" }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="party-table-wrap">
+    <table class="party-table">
+      <thead>
+        <tr><th>Role</th><th>Name</th><th>Address</th><th>City/State/ZIP</th></tr>
+      </thead>
+      <tbody>
+        {% for p in doc.parties %}
+        <tr>
+          <td>{{ p.party_type_label }}</td>
+          <td>{{ p.name }}</td>
+          <td>{{ p.address_1 or "" }} {{ p.address_2 or "" }}</td>
+          <td>{{ p.city or "" }}{% if p.city and p.state %}, {% endif %}{{ p.state or "" }} {{ p.zip or "" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% else %}
 <p class="empty">No deed or mortgage records found for this parcel.</p>

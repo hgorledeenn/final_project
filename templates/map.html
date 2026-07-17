@@ -1,97 +1,144 @@
 {% extends "base.html" %}
 {% block title %}Who Owns This Block{% endblock %}
+{% block container_class %}container-wide{% endblock %}
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
 {% endblock %}
 {% block content %}
 
-<div class="map-header">
+<div class="landing-intro">
   <h1>Who Owns This Block</h1>
   <p class="subtitle">
     University-owned buildings in NYC, colored by institution. Search an
     address, click a dot for details, or filter below.
     {% if mapped_count < total_count %}({{ total_count - mapped_count }} of {{ total_count }} buildings couldn't be located and aren't shown.){% endif %}
   </p>
-
-  <div class="legend">
-    {% for item in legend %}
-    <span class="legend-item">
-      <span class="dot" style="background: {{ item.marker_color }};"></span>
-      {{ item.owner_group }}
-    </span>
-    {% endfor %}
-    {% if timeline_min is not none %}
-    <span class="legend-item">
-      <span class="dot" style="background: #9aa0a8;"></span>
-      Acquisition date unknown
-    </span>
-    {% endif %}
-  </div>
-
-  <form class="filters" id="mapFilters">
-    <input type="text" id="addressSearch" placeholder="Search address…">
-
-    <select name="owner" id="ownerFilter">
-      <option value="">All institutions</option>
-      {% for owner in owners %}
-        <option value="{{ owner }}">{{ owner }}</option>
-      {% endfor %}
-    </select>
-
-    <select name="boro" id="boroFilter">
-      <option value="">All boroughs</option>
-      {% for boro in boros %}
-        <option value="{{ boro }}">{{ boro }}</option>
-      {% endfor %}
-    </select>
-
-    <select name="property_type" id="propertyTypeFilter">
-      <option value="">All property types</option>
-      {% for pt in property_types %}
-        <option value="{{ pt }}">{{ pt }}</option>
-      {% endfor %}
-    </select>
-
-    {% if timeline_min is not none %}
-    <button type="button" id="toggleTimeline" class="export-btn">Timeline <span class="beta-tag">Beta</span></button>
-    {% endif %}
-    <button type="button" id="exportCsv" class="export-btn">Export CSV</button>
-    <a class="reset" href="#" id="resetFilters">Reset</a>
-  </form>
-
-  {% if timeline_min is not none %}
-  <div class="timeline" id="timelinePanel" hidden>
-    <p class="subtitle">
-      <strong>Acquisition timeline (estimated) &mdash; <span class="beta-tag">Beta</span>.</strong>
-      For {{ dated_count }} of {{ mapped_count }} mapped buildings, we can estimate
-      an acquisition year: the earliest year the university's own name appears as
-      the buyer/borrower on a recorded document for that parcel. This dataset has
-      no document-type field, so it can't tell a purchase deed apart from a
-      refinancing, and it only catches documents digitized in ACRIS (dense
-      coverage really starts in the early-to-mid 2000s) &mdash; so most older
-      acquisitions have no estimate and are always shown in gray. Treat this as
-      an early, partial view rather than a verified ownership timeline.
-    </p>
-
-    <div class="timeline-controls">
-      <button type="button" id="playBtn" class="export-btn">Play</button>
-      <input type="range" id="yearSlider" min="{{ timeline_min }}" max="{{ timeline_max }}" value="{{ timeline_max }}">
-      <span class="year-label" id="yearLabel">{{ timeline_max }}</span>
-      <label class="checkbox-label">
-        <input type="checkbox" id="showUnknownDates" checked>
-        Show undated buildings (gray)
-      </label>
-    </div>
-  </div>
-  {% endif %}
-
-  <p class="result-count" id="mapResultCount"></p>
 </div>
 
-<div id="map"></div>
+<div class="landing-layout">
+  <div class="landing-main">
+    <div class="legend">
+      {% for item in legend %}
+      <span class="legend-item">
+        <span class="dot" style="background: {{ item.marker_color }};"></span>
+        {{ item.owner_group }}
+      </span>
+      {% endfor %}
+    </div>
+
+    <form class="filters" id="mapFilters">
+      <input type="text" id="addressSearch" placeholder="Search address…">
+
+      <select name="owner" id="ownerFilter">
+        <option value="">All institutions</option>
+        {% for owner in owners %}
+          <option value="{{ owner }}">{{ owner }}</option>
+        {% endfor %}
+      </select>
+
+      <select name="boro" id="boroFilter">
+        <option value="">All boroughs</option>
+        {% for boro in boros %}
+          <option value="{{ boro }}">{{ boro }}</option>
+        {% endfor %}
+      </select>
+
+      <select name="property_type" id="propertyTypeFilter">
+        <option value="">All property types</option>
+        {% for pt in property_types %}
+          <option value="{{ pt }}">{{ pt }}</option>
+        {% endfor %}
+      </select>
+
+      {% if timeline_min is not none %}
+      <button type="button" id="toggleTimeline" class="export-btn">Timeline <span class="beta-tag">Beta</span></button>
+      {% endif %}
+      <button type="button" id="exportCsv" class="export-btn">Export CSV</button>
+      <a class="reset" href="#" id="resetFilters">Reset</a>
+    </form>
+
+    {% if timeline_min is not none %}
+    <div class="timeline" id="timelinePanel" hidden>
+      <p class="subtitle">
+        <strong>Acquisition timeline (estimated) &mdash; <span class="beta-tag">Beta</span>.</strong>
+        For {{ dated_count }} of {{ mapped_count }} mapped buildings, we can estimate
+        an acquisition year: the earliest year the university's own name appears as
+        the buyer/borrower on a recorded document for that parcel. This dataset has
+        no document-type field, so it can't tell a purchase deed apart from a
+        refinancing, and it only catches documents digitized in ACRIS (dense
+        coverage really starts in the early-to-mid 2000s). While this is active,
+        the map only shows the {{ dated_count }} buildings with an estimated year
+        &mdash; the rest are hidden, since we simply don't know when they were
+        acquired. Treat this as an early, partial view rather than a verified
+        ownership timeline.
+      </p>
+
+      <div class="timeline-controls">
+        <button type="button" id="playBtn" class="export-btn">Play</button>
+        <input type="range" id="yearSlider" min="{{ timeline_min }}" max="{{ timeline_max }}" value="{{ timeline_max }}">
+        <span class="year-label" id="yearLabel">{{ timeline_max }}</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <p class="result-count" id="mapResultCount"></p>
+
+    <div id="map"></div>
+
+    <div class="explore-cta">
+      <h2>Want to dig deeper?</h2>
+      <p class="subtitle">
+        The map only shows what's geocoded. Browse the full building list with
+        every filter, or trace the people, LLCs, and institutions tied to
+        these deals.
+      </p>
+      <div class="cta-buttons">
+        <a class="button" href="{{ url_for('buildings_list') }}">Browse all buildings &rarr;</a>
+        <a class="button button-outline" href="{{ url_for('people_list') }}">People &amp; entities &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <aside class="landing-sidebar">
+    <h2>At a glance</h2>
+    <div class="stat-cards-compact">
+      <div class="card">
+        <div class="stat">{{ total_buildings }}</div>
+        <div class="label">Buildings</div>
+      </div>
+      <div class="card">
+        <div class="stat">{{ total_owners }}</div>
+        <div class="label">Institutions</div>
+      </div>
+      <div class="card">
+        <div class="stat">{{ total_parties }}</div>
+        <div class="label">Named parties in deed/mortgage records</div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>Buildings per institution</h3>
+      <canvas id="ownerChart"></canvas>
+    </div>
+  </aside>
+</div>
 
 <script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='chart.umd.min.js') }}"></script>
 <script>
+  new Chart(document.getElementById('ownerChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ owner_labels | tojson }},
+      datasets: [{ data: {{ owner_values | tojson }}, backgroundColor: '#1d4ed8' }],
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
+    },
+  });
+
   const points = {{ points | tojson }};
 
   const map = L.map('map').setView([40.75, -73.97], 12);
@@ -107,7 +154,6 @@
   let currentFiltered = points;
 
   const yearSlider = document.getElementById('yearSlider');
-  const showUnknownDates = document.getElementById('showUnknownDates');
 
   const toggleTimelineBtn = document.getElementById('toggleTimeline');
   const timelinePanel = document.getElementById('timelinePanel');
@@ -115,25 +161,29 @@
     toggleTimelineBtn.addEventListener('click', () => {
       timelinePanel.hidden = !timelinePanel.hidden;
       toggleTimelineBtn.classList.toggle('active', !timelinePanel.hidden);
+      render();
     });
   }
 
+  function isTimelineActive() {
+    return !!(timelinePanel && !timelinePanel.hidden && yearSlider);
+  }
+
   function pointToMarker(p) {
-    const isUnknown = p.acquired_year === null;
     const marker = L.circleMarker([p.lat, p.lon], {
       radius: 7,
       color: '#ffffff',
       weight: 1,
-      fillColor: isUnknown ? '#9aa0a8' : p.color,
-      fillOpacity: isUnknown ? 0.35 : 0.55,
+      fillColor: p.color,
+      fillOpacity: 0.55,
     });
 
-    const yearLine = isUnknown ? 'Acquisition date unknown' : `Est. acquired ${p.acquired_year}`;
+    const yearLine = p.acquired_year !== null ? `Est. acquired ${p.acquired_year}<br>` : '';
     marker.bindPopup(
       `<strong>${p.address}</strong><br>` +
       `${p.owner}<br>` +
       `${p.boro} &middot; ${p.property_type}<br>` +
-      `${yearLine}<br>` +
+      `${yearLine}` +
       `<a href="/buildings/${p.id}">View full details &rarr;</a>`
     );
 
@@ -146,13 +196,12 @@
       owner: document.getElementById('ownerFilter').value,
       boro: document.getElementById('boroFilter').value,
       property_type: document.getElementById('propertyTypeFilter').value,
-      year: yearSlider ? parseInt(yearSlider.value, 10) : null,
-      showUnknown: showUnknownDates ? showUnknownDates.checked : true,
+      year: isTimelineActive() ? parseInt(yearSlider.value, 10) : null,
     };
   }
 
   function render() {
-    const { search, owner, boro, property_type, year, showUnknown } = currentFilters();
+    const { search, owner, boro, property_type, year } = currentFilters();
 
     const filtered = points.filter((p) => {
       if (search && !p.address.toLowerCase().includes(search)) return false;
@@ -160,7 +209,7 @@
       if (boro && p.boro !== boro) return false;
       if (property_type && p.property_type !== property_type) return false;
       if (year === null) return true;
-      if (p.acquired_year === null) return showUnknown;
+      if (p.acquired_year === null) return false;
       return p.acquired_year <= year;
     });
 
@@ -201,7 +250,10 @@
     e.preventDefault();
     document.getElementById('mapFilters').reset();
     if (yearSlider) yearSlider.value = yearSlider.max;
-    if (showUnknownDates) showUnknownDates.checked = true;
+    if (timelinePanel) {
+      timelinePanel.hidden = true;
+      if (toggleTimelineBtn) toggleTimelineBtn.classList.remove('active');
+    }
     stopPlaying();
     updateYearLabel();
     render();
@@ -227,10 +279,6 @@
       updateYearLabel();
       render();
     });
-  }
-
-  if (showUnknownDates) {
-    showUnknownDates.addEventListener('change', render);
   }
 
   const playBtn = document.getElementById('playBtn');

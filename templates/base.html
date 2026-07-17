@@ -14,10 +14,9 @@
       <a href="{{ url_for('map_view') }}">Map</a>
       <a href="{{ url_for('buildings_list') }}">Buildings</a>
       <a href="{{ url_for('people_list') }}">People</a>
-      <a href="{{ url_for('dashboard') }}">Dashboard</a>
     </nav>
   </header>
-  <main class="container">
+  <main class="container {% block container_class %}{% endblock %}">
     {% block content %}{% endblock %}
   </main>
   <footer class="footer">
