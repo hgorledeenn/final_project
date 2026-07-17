@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ building.building_address }} - Who Owns This Block{% endblock %}
+{% block title %}{{ building.building_address }} - Who Owns the University Next Door{% endblock %}
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
 {% endblock %}
@@ -14,7 +14,7 @@
   <section class="detail-grid">
     <div><span class="k">Borough</span><span class="v">{{ building.boro_label }}</span></div>
     <div><span class="k">Block / Lot</span><span class="v">{{ building.block }} / {{ building.lot }}</span></div>
-    <div><span class="k">BIN</span><span class="v">{{ building.bin | int }}</span></div>
+    <div><span class="k">BIN</span><span class="v">{{ (building.bin | int) if building.bin else "—" }}</span></div>
     <div><span class="k">Property type</span><span class="v">{{ building.property_type_label }} ({{ building.property_type }})</span></div>
     <div><span class="k">ZIP</span><span class="v">{{ building.building_zip or "—" }}</span></div>
   </section>

@@ -115,6 +115,17 @@ def map_view():
         .to_dict(orient="records")
     )
 
+    # Distinct party names per mapped building, so the "At a glance" sidebar
+    # can recompute a true (deduped) named-parties count as map filters
+    # narrow down which buildings are showing, client-side.
+    mappable_ids = set(mappable["buildingid"])
+    building_party_names = (
+        PARTIES[PARTIES["buildingid"].isin(mappable_ids)]
+        .groupby("buildingid")["name"]
+        .apply(lambda names: sorted({n for n in names if n}))
+        .to_dict()
+    )
+
     dated_years = BUILDINGS["acquired_year"].dropna()
     timeline_min = int(dated_years.min()) if not dated_years.empty else None
     timeline_max = int(dated_years.max()) if not dated_years.empty else None
@@ -138,6 +149,7 @@ def map_view():
         total_parties=PARTIES["name"].nunique(),
         owner_labels=by_owner.index.tolist(),
         owner_values=by_owner.values.tolist(),
+        building_party_names=building_party_names,
     )
 
 

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Who Owns This Block{% endblock %}
+{% block title %}Who Owns the University Next Door{% endblock %}
 {% block container_class %}container-wide{% endblock %}
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
@@ -7,7 +7,7 @@
 {% block content %}
 
 <div class="landing-intro">
-  <h1>Who Owns This Block</h1>
+  <h1>Who Owns the University Next Door</h1>
   <p class="subtitle">
     University-owned buildings in NYC, colored by institution. Search an
     address, click a dot for details, or filter below.
@@ -101,17 +101,18 @@
 
   <aside class="landing-sidebar">
     <h2>At a glance</h2>
+    <p class="subtitle" id="statsScopeNote" style="display: none;">Reflecting the filters applied on the left.</p>
     <div class="stat-cards-compact">
       <div class="card">
-        <div class="stat">{{ total_buildings }}</div>
+        <div class="stat" id="statBuildings">{{ total_buildings }}</div>
         <div class="label">Buildings</div>
       </div>
       <div class="card">
-        <div class="stat">{{ total_owners }}</div>
+        <div class="stat" id="statOwners">{{ total_owners }}</div>
         <div class="label">Institutions</div>
       </div>
       <div class="card">
-        <div class="stat">{{ total_parties }}</div>
+        <div class="stat" id="statParties">{{ total_parties }}</div>
         <div class="label">Named parties in deed/mortgage records</div>
       </div>
     </div>
@@ -140,6 +141,10 @@
   });
 
   const points = {{ points | tojson }};
+  const buildingPartyNames = {{ building_party_names | tojson }};
+  const totalBuildingsAll = {{ total_buildings }};
+  const totalOwnersAll = {{ total_owners }};
+  const totalPartiesAll = {{ total_parties }};
 
   const map = L.map('map').setView([40.75, -73.97], 12);
 
@@ -230,6 +235,32 @@
     } else if (!hasFitBoundsOnce) {
       map.setView([40.75, -73.97], 12);
     }
+
+    updateStats(filtered, { search, owner, boro, property_type });
+  }
+
+  function updateStats(filtered, activeFilters) {
+    const hasFilter = !!(activeFilters.search || activeFilters.owner || activeFilters.boro || activeFilters.property_type);
+
+    if (!hasFilter) {
+      document.getElementById('statBuildings').textContent = totalBuildingsAll;
+      document.getElementById('statOwners').textContent = totalOwnersAll;
+      document.getElementById('statParties').textContent = totalPartiesAll;
+      document.getElementById('statsScopeNote').style.display = 'none';
+      return;
+    }
+
+    const ownerSet = new Set();
+    const partyNameSet = new Set();
+    filtered.forEach((p) => {
+      ownerSet.add(p.owner_group);
+      (buildingPartyNames[p.id] || []).forEach((name) => partyNameSet.add(name));
+    });
+
+    document.getElementById('statBuildings').textContent = filtered.length;
+    document.getElementById('statOwners').textContent = ownerSet.size;
+    document.getElementById('statParties').textContent = partyNameSet.size;
+    document.getElementById('statsScopeNote').style.display = '';
   }
 
   ['ownerFilter', 'boroFilter', 'propertyTypeFilter'].forEach((id) => {
